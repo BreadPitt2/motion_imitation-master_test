@@ -1,0 +1,27 @@
+URDF: C:\Users\iamhu\OneDrive\Desktop\motion_imitation-master_test\bittle\urdf\bittle_toes.urdf
+base_z: 0.8
+
+toeLF index: 7
+left-front-knee-link index: 6
+  toe_pos:  (-0.239818, 0.522579, 0.194941)
+  knee_pos: (-0.445958, 0.52258, 0.28726)
+  delta:    (0.20614, -1e-06, -0.092319)
+
+toeLB index: 4
+left-back-knee-link index: 3
+  toe_pos:  (-0.239578, -0.519231, 0.197281)
+  knee_pos: (-0.445958, -0.51923, 0.28726)
+  delta:    (0.20638, -1e-06, -0.089979)
+
+toeRF index: 15
+right-front-knee-link index: 14
+  toe_pos:  (0.293248, 0.520201, 0.184631)
+  knee_pos: (0.491448, 0.52258, 0.2796)
+  delta:    (-0.1982, -0.002379, -0.094969)
+
+toeRB index: 12
+right-back-knee-link index: 11
+  toe_pos:  (0.293248, -0.521759, 0.195341)
+  knee_pos: (0.491448, -0.51938, 0.2796)
+  delta:    (-0.1982, -0.002379, -0.084259)
+
