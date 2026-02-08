@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import time
 from pathlib import Path
 
@@ -90,6 +91,12 @@ def main() -> None:
     )
     parser.add_argument("--base_z", type=float, default=0.8)
     parser.add_argument(
+        "--identity_orientation",
+        action="store_true",
+        default=False,
+        help="Use identity base orientation (default: use Laikago's standard init orientation).",
+    )
+    parser.add_argument(
         "--ground_margin",
         type=float,
         default=0.02,
@@ -164,9 +171,16 @@ def main() -> None:
         p.setRealTimeSimulation(0)
 
     plane = p.loadURDF("plane.urdf")
+    if args.identity_orientation:
+        base_orn = [0, 0, 0, 1]
+    else:
+        # Match the orientation used by the Laikago robot class in this repo:
+        # heading towards -x direction and z axis is up.
+        base_orn = p.getQuaternionFromEuler([math.pi / 2.0, 0.0, math.pi / 2.0])
     robot = p.loadURDF(
         args.urdf,
         basePosition=[0, 0, float(args.base_z)],
+        baseOrientation=base_orn,
         useFixedBase=(not args.simulate),
     )
 
@@ -279,4 +293,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
