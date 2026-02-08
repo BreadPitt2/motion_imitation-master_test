@@ -16,7 +16,7 @@ except ModuleNotFoundError as e:  # pragma: no cover
 
 def _default_urdf_path() -> str:
     repo_root = Path(__file__).resolve().parents[1]
-    return str(repo_root / "bittle" / "urdf" / "bittle.urdf")
+    return str(repo_root / "bittle" / "urdf" / "bittle_toes.urdf")
 
 
 def _get_screen_size() -> tuple[int, int]:
@@ -122,6 +122,12 @@ def main() -> None:
         help="Label only the 8 main Bittle joints (shoulders + knees).",
     )
     parser.add_argument(
+        "--only_toes",
+        action="store_true",
+        default=False,
+        help="Label only toe links (link name contains 'toe').",
+    )
+    parser.add_argument(
         "--width",
         type=int,
         default=960,
@@ -193,12 +199,17 @@ def main() -> None:
         info = p.getJointInfo(robot, i)
         joint_name = idx_to_joint[i]
         joint_type = int(info[2])
-        if (not args.show_fixed) and joint_type == p.JOINT_FIXED:
+        link_name = idx_to_link[i]
+        if (not args.show_fixed) and joint_type == p.JOINT_FIXED and not (
+            args.only_toes and ("toe" in link_name.lower())
+        ):
+            continue
+        if args.only_toes and ("toe" not in link_name.lower()):
             continue
         if args.only_named and (joint_name not in wanted_joint_names):
             continue
 
-        txt = f"{i}: {idx_to_link[i]}"
+        txt = f"{i}: {link_name}"
         label_ids[i] = p.addUserDebugText(
             txt,
             pos,
