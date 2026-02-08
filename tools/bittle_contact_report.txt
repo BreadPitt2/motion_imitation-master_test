@@ -1,0 +1,5 @@
+URDF: C:\Users\iamhu\OneDrive\Desktop\motion_imitation-master_test\bittle\urdf\bittle.urdf
+steps: 480
+base_z: 0.25
+
+Touched link indices: []
