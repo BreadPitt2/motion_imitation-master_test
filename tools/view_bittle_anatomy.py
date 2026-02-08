@@ -35,6 +35,32 @@ def _get_screen_size() -> tuple[int, int]:
     return 1280, 720
 
 
+def _fit_camera_to_robot(robot: int, num_joints: int) -> None:
+    aabb_min = [float("inf"), float("inf"), float("inf")]
+    aabb_max = [float("-inf"), float("-inf"), float("-inf")]
+
+    def expand(aabb):
+        lo, hi = aabb
+        for k in range(3):
+            aabb_min[k] = min(aabb_min[k], lo[k])
+            aabb_max[k] = max(aabb_max[k], hi[k])
+
+    expand(p.getAABB(robot, -1))
+    for i in range(num_joints):
+        expand(p.getAABB(robot, i))
+
+    center = [(aabb_min[k] + aabb_max[k]) * 0.5 for k in range(3)]
+    extent = [aabb_max[k] - aabb_min[k] for k in range(3)]
+    dist = max(extent) * 1.8 if max(extent) > 0 else 1.0
+
+    p.resetDebugVisualizerCamera(
+        cameraDistance=float(dist),
+        cameraYaw=35,
+        cameraPitch=-25,
+        cameraTargetPosition=center,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Static (no-physics) Bittle URDF viewer with joint/link labels."
@@ -42,7 +68,12 @@ def main() -> None:
     parser.add_argument("--urdf", type=str, default=_default_urdf_path())
     parser.add_argument("--base_x", type=float, default=0.0)
     parser.add_argument("--base_y", type=float, default=0.0)
-    parser.add_argument("--base_z", type=float, default=0.0)
+    parser.add_argument(
+        "--base_z",
+        type=float,
+        default=0.6,
+        help="Initial base height (default: 0.6 so it is above the plane).",
+    )
     parser.add_argument(
         "--label_scale",
         type=float,
@@ -50,22 +81,28 @@ def main() -> None:
         help="Text size for debug labels.",
     )
     parser.add_argument(
-        "--windowed",
-        action="store_true",
-        default=False,
-        help="Do not try to start fullscreen-sized window.",
-    )
-    parser.add_argument(
         "--width",
         type=int,
-        default=0,
-        help="GUI window width (0 = auto).",
+        default=1280,
+        help="GUI window width (default: 1280).",
     )
     parser.add_argument(
         "--height",
         type=int,
-        default=0,
-        help="GUI window height (0 = auto).",
+        default=720,
+        help="GUI window height (default: 720).",
+    )
+    parser.add_argument(
+        "--fullscreen",
+        action="store_true",
+        default=False,
+        help="Start with a fullscreen-sized window (may be too big on some setups).",
+    )
+    parser.add_argument(
+        "--no_plane",
+        action="store_true",
+        default=False,
+        help="Do not load a ground plane (visual reference).",
     )
     parser.add_argument(
         "--show_fixed",
@@ -82,12 +119,11 @@ def main() -> None:
     args = parser.parse_args()
 
     options = ""
-    if not args.windowed:
-        width = int(args.width)
-        height = int(args.height)
-        if width <= 0 or height <= 0:
-            width, height = _get_screen_size()
-        options = f"--width={width} --height={height}"
+    width = int(args.width)
+    height = int(args.height)
+    if args.fullscreen:
+        width, height = _get_screen_size()
+    options = f"--width={width} --height={height}"
 
     p.connect(p.GUI, options=options)
     p.setAdditionalSearchPath(pd.getDataPath())
@@ -98,13 +134,15 @@ def main() -> None:
     p.setRealTimeSimulation(0)
 
     # Optional: draw a ground plane for visual reference only.
-    p.loadURDF("plane.urdf")
+    if not args.no_plane:
+        p.loadURDF("plane.urdf")
 
     base_pos = [float(args.base_x), float(args.base_y), float(args.base_z)]
     base_orn = [0, 0, 0, 1]
     robot = p.loadURDF(args.urdf, basePosition=base_pos, baseOrientation=base_orn, useFixedBase=True)
 
     num = p.getNumJoints(robot)
+    _fit_camera_to_robot(robot, num)
 
     if args.print_map:
         print("URDF:", args.urdf)

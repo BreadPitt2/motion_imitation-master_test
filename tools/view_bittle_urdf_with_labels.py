@@ -48,32 +48,31 @@ def main() -> None:
         help="Text size for debug labels.",
     )
     parser.add_argument(
-        "--windowed",
-        action="store_true",
-        default=False,
-        help="Do not try to start fullscreen-sized window.",
-    )
-    parser.add_argument(
         "--width",
         type=int,
-        default=0,
-        help="GUI window width (0 = auto).",
+        default=1280,
+        help="GUI window width (default: 1280).",
     )
     parser.add_argument(
         "--height",
         type=int,
-        default=0,
-        help="GUI window height (0 = auto).",
+        default=720,
+        help="GUI window height (default: 720).",
+    )
+    parser.add_argument(
+        "--fullscreen",
+        action="store_true",
+        default=False,
+        help="Start with a fullscreen-sized window (may be too big on some setups).",
     )
     args = parser.parse_args()
 
     options = ""
-    if not args.windowed:
-        width = int(args.width)
-        height = int(args.height)
-        if width <= 0 or height <= 0:
-            width, height = _get_screen_size()
-        options = f"--width={width} --height={height}"
+    width = int(args.width)
+    height = int(args.height)
+    if args.fullscreen:
+        width, height = _get_screen_size()
+    options = f"--width={width} --height={height}"
 
     p.connect(p.GUI, options=options)
     p.setAdditionalSearchPath(pd.getDataPath())
