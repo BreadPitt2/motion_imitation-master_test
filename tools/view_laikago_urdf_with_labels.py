@@ -80,6 +80,19 @@ def _fit_camera_to_robot(robot: int, num_joints: int) -> None:
     )
 
 
+def _label_position(robot: int, link_index: int, mode: str) -> tuple[float, float, float]:
+    """Returns a world-space position for placing a debug label."""
+    if mode == "aabb":
+        lo, hi = p.getAABB(robot, link_index)
+        return (
+            float((lo[0] + hi[0]) * 0.5),
+            float((lo[1] + hi[1]) * 0.5),
+            float((lo[2] + hi[2]) * 0.5),
+        )
+    # Default: link frame position.
+    return tuple(p.getLinkState(robot, link_index, computeForwardKinematics=True)[4])
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--urdf", type=str, default=_default_urdf_path())
@@ -116,6 +129,13 @@ def main() -> None:
         type=float,
         default=0.7,
         help="Text size for debug labels.",
+    )
+    parser.add_argument(
+        "--label_mode",
+        type=str,
+        default="aabb",
+        choices=["aabb", "link"],
+        help="Where to place label: 'aabb' centers on geometry, 'link' uses link frame.",
     )
     parser.add_argument(
         "--show_fixed",
@@ -219,7 +239,7 @@ def main() -> None:
             if name_filter not in key:
                 continue
 
-        pos = p.getLinkState(robot, i, computeForwardKinematics=True)[4]
+        pos = _label_position(robot, i, args.label_mode)
         txt = f"{i}: {link_name}\n  joint={joint_name}"
         label_ids[i] = p.addUserDebugText(
             txt,
@@ -265,7 +285,7 @@ def main() -> None:
         )
 
         for i in list(label_ids.keys()):
-            pos = p.getLinkState(robot, i, computeForwardKinematics=True)[4]
+            pos = _label_position(robot, i, args.label_mode)
             is_touching = i in touched
             color = [1.0, 0.2, 0.2] if is_touching else [0.2, 0.9, 0.2]
             suffix = "  CONTACT" if is_touching else ""
