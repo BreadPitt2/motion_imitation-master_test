@@ -206,7 +206,7 @@ def main() -> None:
                 continue
 
         pos = p.getLinkState(robot, i, computeForwardKinematics=True)[4]
-        txt = f"{i}: {link_name}\n  joint={joint_name}"
+        txt = f"{i}: {link_name}"
         label_ids[i] = p.addUserDebugText(
             txt,
             pos,
@@ -255,7 +255,7 @@ def main() -> None:
             is_touching = i in touched
             color = [1.0, 0.2, 0.2] if is_touching else [0.2, 0.9, 0.2]
             suffix = "  CONTACT" if is_touching else ""
-            txt = f"{i}: {idx_to_link[i]}\n  joint={idx_to_joint[i]}{suffix}"
+            txt = f"{i}: {idx_to_link[i]}{suffix}"
             p.addUserDebugText(
                 txt,
                 pos,

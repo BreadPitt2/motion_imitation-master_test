@@ -198,7 +198,7 @@ def main() -> None:
         if args.only_named and (joint_name not in wanted_joint_names):
             continue
 
-        txt = f"{i}: {idx_to_link[i]}\n  joint={joint_name}"
+        txt = f"{i}: {idx_to_link[i]}"
         label_ids[i] = p.addUserDebugText(
             txt,
             pos,
@@ -253,7 +253,7 @@ def main() -> None:
             is_touching = i in touched
             color = [1.0, 0.2, 0.2] if is_touching else [0.2, 0.9, 0.2]
             suffix = "  CONTACT" if is_touching else ""
-            txt = f"{i}: {idx_to_link[i]}\n  joint={idx_to_joint[i]}{suffix}"
+            txt = f"{i}: {idx_to_link[i]}{suffix}"
             p.addUserDebugText(
                 txt,
                 pos,
@@ -269,8 +269,7 @@ def main() -> None:
             if touched_sorted:
                 for idx in touched_sorted:
                     name = "BASE" if idx == -1 else idx_to_link.get(idx, "?")
-                    jname = "" if idx == -1 else idx_to_joint.get(idx, "")
-                    print(f"  {idx:2d} -> link={name} joint={jname}")
+                    print(f"  {idx:2d} -> link={name}")
             last_print = now
 
         if args.simulate:
