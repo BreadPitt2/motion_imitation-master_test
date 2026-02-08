@@ -17,6 +17,22 @@ def _default_urdf_path() -> str:
     return str(repo_root / "bittle" / "urdf" / "bittle.urdf")
 
 
+def _get_screen_size() -> tuple[int, int]:
+    try:
+        import tkinter as tk
+
+        root = tk.Tk()
+        root.withdraw()
+        width = int(root.winfo_screenwidth())
+        height = int(root.winfo_screenheight())
+        root.destroy()
+        if width > 0 and height > 0:
+            return width, height
+    except Exception:
+        pass
+    return 1280, 720
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--urdf", type=str, default=_default_urdf_path())
@@ -29,9 +45,35 @@ def main() -> None:
         default=0.8,
         help="Text size for debug labels.",
     )
+    parser.add_argument(
+        "--windowed",
+        action="store_true",
+        default=False,
+        help="Do not try to start fullscreen-sized window.",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=0,
+        help="GUI window width (0 = auto).",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=0,
+        help="GUI window height (0 = auto).",
+    )
     args = parser.parse_args()
 
-    p.connect(p.GUI)
+    options = ""
+    if not args.windowed:
+        width = int(args.width)
+        height = int(args.height)
+        if width <= 0 or height <= 0:
+            width, height = _get_screen_size()
+        options = f"--width={width} --height={height}"
+
+    p.connect(p.GUI, options=options)
     p.setAdditionalSearchPath(pd.getDataPath())
     p.setGravity(0, 0, -9.8)
 
@@ -123,4 +165,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
