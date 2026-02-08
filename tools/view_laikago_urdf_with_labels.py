@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 import time
 from pathlib import Path
 
@@ -80,19 +79,6 @@ def _fit_camera_to_robot(robot: int, num_joints: int) -> None:
     )
 
 
-def _label_position(robot: int, link_index: int, mode: str) -> tuple[float, float, float]:
-    """Returns a world-space position for placing a debug label."""
-    if mode == "aabb":
-        lo, hi = p.getAABB(robot, link_index)
-        return (
-            float((lo[0] + hi[0]) * 0.5),
-            float((lo[1] + hi[1]) * 0.5),
-            float((lo[2] + hi[2]) * 0.5),
-        )
-    # Default: link frame position.
-    return tuple(p.getLinkState(robot, link_index, computeForwardKinematics=True)[4])
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--urdf", type=str, default=_default_urdf_path())
@@ -103,12 +89,6 @@ def main() -> None:
         help="Enable physics stepping + gravity (default: off / static viewer).",
     )
     parser.add_argument("--base_z", type=float, default=0.8)
-    parser.add_argument(
-        "--identity_orientation",
-        action="store_true",
-        default=False,
-        help="Use identity base orientation (default: use Laikago's standard init orientation).",
-    )
     parser.add_argument(
         "--ground_margin",
         type=float,
@@ -129,13 +109,6 @@ def main() -> None:
         type=float,
         default=0.7,
         help="Text size for debug labels.",
-    )
-    parser.add_argument(
-        "--label_mode",
-        type=str,
-        default="aabb",
-        choices=["aabb", "link"],
-        help="Where to place label: 'aabb' centers on geometry, 'link' uses link frame.",
     )
     parser.add_argument(
         "--show_fixed",
@@ -191,16 +164,9 @@ def main() -> None:
         p.setRealTimeSimulation(0)
 
     plane = p.loadURDF("plane.urdf")
-    if args.identity_orientation:
-        base_orn = [0, 0, 0, 1]
-    else:
-        # Match the orientation used by the Laikago robot class in this repo:
-        # heading towards -x direction and z axis is up.
-        base_orn = p.getQuaternionFromEuler([math.pi / 2.0, 0.0, math.pi / 2.0])
     robot = p.loadURDF(
         args.urdf,
         basePosition=[0, 0, float(args.base_z)],
-        baseOrientation=base_orn,
         useFixedBase=(not args.simulate),
     )
 
@@ -239,7 +205,7 @@ def main() -> None:
             if name_filter not in key:
                 continue
 
-        pos = _label_position(robot, i, args.label_mode)
+        pos = p.getLinkState(robot, i, computeForwardKinematics=True)[4]
         txt = f"{i}: {link_name}\n  joint={joint_name}"
         label_ids[i] = p.addUserDebugText(
             txt,
@@ -285,7 +251,7 @@ def main() -> None:
         )
 
         for i in list(label_ids.keys()):
-            pos = _label_position(robot, i, args.label_mode)
+            pos = p.getLinkState(robot, i, computeForwardKinematics=True)[4]
             is_touching = i in touched
             color = [1.0, 0.2, 0.2] if is_touching else [0.2, 0.9, 0.2]
             suffix = "  CONTACT" if is_touching else ""
