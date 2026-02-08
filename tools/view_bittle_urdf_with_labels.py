@@ -35,6 +35,49 @@ def _get_screen_size() -> tuple[int, int]:
     return 1280, 720
 
 
+def _compute_robot_aabb(robot: int, num_joints: int) -> tuple[list[float], list[float]]:
+    aabb_min = [float("inf"), float("inf"), float("inf")]
+    aabb_max = [float("-inf"), float("-inf"), float("-inf")]
+
+    def expand(aabb):
+        lo, hi = aabb
+        for k in range(3):
+            aabb_min[k] = min(aabb_min[k], lo[k])
+            aabb_max[k] = max(aabb_max[k], hi[k])
+
+    expand(p.getAABB(robot, -1))
+    for i in range(num_joints):
+        expand(p.getAABB(robot, i))
+
+    return aabb_min, aabb_max
+
+
+def _raise_robot_above_ground(robot: int, num_joints: int, margin: float) -> None:
+    """Shifts base so the robot AABB min-z is at least `margin` above z=0."""
+    aabb_min, _ = _compute_robot_aabb(robot, num_joints)
+    min_z = float(aabb_min[2])
+    if min_z >= margin:
+        return
+    base_pos, base_orn = p.getBasePositionAndOrientation(robot)
+    dz = margin - min_z
+    p.resetBasePositionAndOrientation(
+        robot, [base_pos[0], base_pos[1], base_pos[2] + dz], base_orn
+    )
+
+
+def _fit_camera_to_robot(robot: int, num_joints: int) -> None:
+    aabb_min, aabb_max = _compute_robot_aabb(robot, num_joints)
+    center = [(aabb_min[k] + aabb_max[k]) * 0.5 for k in range(3)]
+    extent = [aabb_max[k] - aabb_min[k] for k in range(3)]
+    dist = max(extent) * 1.8 if max(extent) > 0 else 1.0
+    p.resetDebugVisualizerCamera(
+        cameraDistance=float(dist),
+        cameraYaw=35,
+        cameraPitch=-25,
+        cameraTargetPosition=center,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--urdf", type=str, default=_default_urdf_path())
@@ -45,6 +88,18 @@ def main() -> None:
         help="Enable physics stepping + gravity (default: off / static viewer).",
     )
     parser.add_argument("--base_z", type=float, default=0.8)
+    parser.add_argument(
+        "--ground_margin",
+        type=float,
+        default=0.02,
+        help="When not simulating, auto-raise robot so it is this far above z=0.",
+    )
+    parser.add_argument(
+        "--no_auto_ground",
+        action="store_true",
+        default=False,
+        help="Disable the auto-raise above ground behavior.",
+    )
     parser.add_argument("--steps", type=int, default=2400, help="How long to simulate (only with --simulate).")
     parser.add_argument("--dt", type=float, default=1.0 / 240.0, help="Wall-clock sleep per step (only with --simulate).")
     parser.add_argument("--gravity", type=float, default=-9.8, help="Gravity z (only with --simulate).")
@@ -110,6 +165,9 @@ def main() -> None:
     )
 
     num = p.getNumJoints(robot)
+    if (not args.simulate) and (not args.no_auto_ground):
+        _raise_robot_above_ground(robot, num, margin=float(args.ground_margin))
+    _fit_camera_to_robot(robot, num)
     idx_to_joint = {}
     idx_to_link = {}
     for i in range(num):
