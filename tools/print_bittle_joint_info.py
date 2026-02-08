@@ -1,8 +1,14 @@
 import argparse
 from pathlib import Path
 
-import pybullet as p
-import pybullet_data as pd
+try:
+    import pybullet as p
+    import pybullet_data as pd
+except ModuleNotFoundError as e:  # pragma: no cover
+    raise SystemExit(
+        "Missing dependency: pybullet. Install it (in your conda env) with:\n"
+        "  pip install pybullet"
+    ) from e
 
 
 JOINT_TYPE = {
@@ -22,7 +28,15 @@ def _default_urdf_path() -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--urdf", type=str, default=_default_urdf_path())
+    parser.add_argument(
+        "--out",
+        type=str,
+        default=str(Path(__file__).resolve().parent / "bittle_joint_info.txt"),
+        help="Output .txt path (default: tools/bittle_joint_info.txt)",
+    )
     args = parser.parse_args()
+
+    lines: list[str] = []
 
     p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pd.getDataPath())
@@ -30,9 +44,9 @@ def main() -> None:
     robot = p.loadURDF(args.urdf, useFixedBase=True)
     num = p.getNumJoints(robot)
 
-    print("URDF:", args.urdf)
-    print("num_joints:", num)
-    print()
+    lines.append(f"URDF: {args.urdf}")
+    lines.append(f"num_joints: {num}")
+    lines.append("")
 
     child_link_name = {}
     joint_name = {}
@@ -51,12 +65,13 @@ def main() -> None:
         parent_lname = "BASE" if parent == -1 else child_link_name[parent]
         axis = info[13]
         ll, ul = info[8], info[9]
-        print(
+        lines.append(
             f"[{i:2d}] {jtype:8s} q={q_index:2d} u={u_index:2d} parent={parent:2d}({parent_lname}) "
             f"child={lname:28s} joint={jname:30s} axis={tuple(axis)} lim=({ll:.4f},{ul:.4f})"
         )
 
-    print("\n--- Named joints (index in PyBullet) ---")
+    lines.append("")
+    lines.append("--- Named joints (index in PyBullet) ---")
     wanted = [
         "left-front-shoulder-joint",
         "left-back-shoulder-joint",
@@ -69,9 +84,10 @@ def main() -> None:
     ]
     name_to_idx = {joint_name[i]: i for i in range(num)}
     for n in wanted:
-        print(f"{n:28s} -> {name_to_idx.get(n)}")
+        lines.append(f"{n:28s} -> {name_to_idx.get(n)}")
 
-    print("\n--- Candidate arrays in retarget order [LF, LB, RF, RB] ---")
+    lines.append("")
+    lines.append("--- Candidate arrays in retarget order [LF, LB, RF, RB] ---")
     shoulders = [
         name_to_idx.get("left-front-shoulder-joint"),
         name_to_idx.get("left-back-shoulder-joint"),
@@ -84,24 +100,29 @@ def main() -> None:
         name_to_idx.get("right-front-knee-joint"),
         name_to_idx.get("right-back-knee-joint"),
     ]
-    print("SIM_HIP_JOINT_IDS candidates (shoulder link indices):", shoulders)
-    print("SIM_TOE_JOINT_IDS candidates (knee/end-eff link indices):", knees)
+    lines.append(f"SIM_HIP_JOINT_IDS candidates (shoulder link indices): {shoulders}")
+    lines.append(f"SIM_TOE_JOINT_IDS candidates (knee/end-eff link indices): {knees}")
 
-    print("\n--- World positions (sanity check) ---")
+    lines.append("")
+    lines.append("--- World positions (sanity check) ---")
     for label, idxs in [("shoulder", shoulders), ("knee", knees)]:
         for idx in idxs:
             if idx is None:
                 continue
             ls = p.getLinkState(robot, idx, computeForwardKinematics=True)
             pos = ls[4]
-            print(
+            lines.append(
                 f"{label:8s} linkIndex={idx:2d} linkName={child_link_name[idx]:28s} "
                 f"world_pos={tuple(round(x, 4) for x in pos)}"
             )
 
     p.disconnect()
 
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote: {out_path}")
+
 
 if __name__ == "__main__":
     main()
-
