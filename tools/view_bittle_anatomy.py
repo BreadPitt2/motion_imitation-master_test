@@ -83,14 +83,14 @@ def main() -> None:
     parser.add_argument(
         "--width",
         type=int,
-        default=1280,
-        help="GUI window width (default: 1280).",
+        default=960,
+        help="GUI window width (default: 960).",
     )
     parser.add_argument(
         "--height",
         type=int,
-        default=720,
-        help="GUI window height (default: 720).",
+        default=540,
+        help="GUI window height (default: 540).",
     )
     parser.add_argument(
         "--fullscreen",
@@ -125,6 +125,7 @@ def main() -> None:
         width, height = _get_screen_size()
     options = f"--width={width} --height={height}"
 
+    print(f"Launching PyBullet GUI with options: {options}")
     p.connect(p.GUI, options=options)
     p.setAdditionalSearchPath(pd.getDataPath())
     p.resetSimulation()
