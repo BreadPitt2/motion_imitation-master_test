@@ -7,7 +7,7 @@ URDF_FILENAME = str(Path(__file__).resolve().parents[1] / "bittle" / "urdf" / "b
 REF_POS_SCALE = 1
 INIT_POS = np.array([0, 0, 0])
 INIT_ROT = transformations.quaternion_from_euler(
-    ai=0.0, aj=0.0, ak=0.0, axes="sxyz")
+    ai=0.0, aj=0.0, ak=-np.pi / 2.0, axes="sxyz")
 
 # Order is [LF, LB, RF, RB], same as retarget configs.
 # Using link names is more stable than hardcoded PyBullet indices.
