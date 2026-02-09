@@ -451,25 +451,25 @@
 
     <!-- Toe joints (fixed). NOTE: initial placement is approximate; adjust origins after visual check. -->
     <joint name="toeLF_joint" type="fixed">
-      <origin xyz="-0.09232 0 -0.20614" rpy="0 0 0"/>
+      <origin xyz="0.045914 -0.012442 -0.257462" rpy="0 0 0"/>
       <parent link="left-front-knee-link"/>
       <child link="toeLF"/>
     </joint>
 
     <joint name="toeLB_joint" type="fixed">
-      <origin xyz="-0.08998 0 -0.20638" rpy="0 0 0"/>
+      <origin xyz="0.048254 -0.012442 -0.257702" rpy="0 0 0"/>
       <parent link="left-back-knee-link"/>
       <child link="toeLB"/>
     </joint>
 
     <joint name="toeRF_joint" type="fixed">
-      <origin xyz="0.09497 -0.00238 -0.1982" rpy="0 0 0"/>
+      <origin xyz="0.178059 -0.016754 -0.248036" rpy="0 0 0"/>
       <parent link="right-front-knee-link"/>
       <child link="toeRF"/>
     </joint>
 
     <joint name="toeRB_joint" type="fixed">
-      <origin xyz="0.08426 -0.00238 -0.1982" rpy="0 0 0"/>
+      <origin xyz="0.167349 -0.016754 -0.248036" rpy="0 0 0"/>
       <parent link="right-back-knee-link"/>
       <child link="toeRB"/>
     </joint>
