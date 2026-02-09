@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 import inspect
+import importlib
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0, parentdir)
@@ -21,9 +22,8 @@ import pybullet
 import pybullet_data as pd
 from motion_imitation.utilities import motion_util
 
-# import retarget_config_a1 as config
-import retarget_config_laikago as config
-# import retarget_config_vision60 as config
+CONFIG_MODULE = os.environ.get("RETARGET_CONFIG_MODULE", "retarget_config_laikago")
+config = importlib.import_module(CONFIG_MODULE)
 
 POS_SIZE = 3
 ROT_SIZE = 4
@@ -31,6 +31,41 @@ DEFAULT_ROT = np.array([0, 0, 0, 1])
 FORWARD_DIR = np.array([1, 0, 0])
 
 GROUND_URDF_FILENAME = "plane_implicit.urdf"
+
+def _resolve_link_indices(robot, link_names):
+  num_joints = pybullet.getNumJoints(robot)
+  link_name_to_idx = {}
+  for i in range(num_joints):
+    info = pybullet.getJointInfo(robot, i)
+    child_link_name = info[12].decode("utf-8")
+    link_name_to_idx[child_link_name] = i
+
+  resolved = []
+  for name in link_names:
+    if name not in link_name_to_idx:
+      raise ValueError("Link name not found in URDF: {}".format(name))
+    resolved.append(link_name_to_idx[name])
+  return resolved
+
+def _ensure_sim_target_ids(robot):
+  # Backward-compatible: existing configs with *_JOINT_IDS still work.
+  if hasattr(config, "SIM_TOE_JOINT_IDS"):
+    toe_ids = config.SIM_TOE_JOINT_IDS
+  elif hasattr(config, "SIM_TOE_LINK_NAMES"):
+    toe_ids = _resolve_link_indices(robot, config.SIM_TOE_LINK_NAMES)
+    config.SIM_TOE_JOINT_IDS = toe_ids
+  else:
+    raise ValueError("Config must define SIM_TOE_JOINT_IDS or SIM_TOE_LINK_NAMES.")
+
+  if hasattr(config, "SIM_HIP_JOINT_IDS"):
+    hip_ids = config.SIM_HIP_JOINT_IDS
+  elif hasattr(config, "SIM_HIP_LINK_NAMES"):
+    hip_ids = _resolve_link_indices(robot, config.SIM_HIP_LINK_NAMES)
+    config.SIM_HIP_JOINT_IDS = hip_ids
+  else:
+    raise ValueError("Config must define SIM_HIP_JOINT_IDS or SIM_HIP_LINK_NAMES.")
+
+  return toe_ids, hip_ids
 
 # reference motion
 FRAME_DURATION = 0.01667
@@ -338,6 +373,10 @@ def main(argv):
     
       ground = pybullet.loadURDF(GROUND_URDF_FILENAME)
       robot = pybullet.loadURDF(config.URDF_FILENAME, config.INIT_POS, config.INIT_ROT)
+      toe_ids, hip_ids = _ensure_sim_target_ids(robot)
+      print("Loaded config:", CONFIG_MODULE)
+      print("SIM_TOE_JOINT_IDS:", toe_ids)
+      print("SIM_HIP_JOINT_IDS:", hip_ids)
       # Set robot to default pose to bias knees in the right direction.
       set_pose(robot, np.concatenate([config.INIT_POS, config.INIT_ROT, config.DEFAULT_JOINT_POSE]))
 
@@ -390,4 +429,3 @@ def main(argv):
 
 if __name__ == "__main__":
   tf.app.run(main)
-
