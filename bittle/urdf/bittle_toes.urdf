@@ -451,7 +451,7 @@
 
     <!-- Toe joints (fixed). NOTE: initial placement is approximate; adjust origins after visual check. -->
     <joint name="toeLF_joint" type="fixed">
-      <origin xyz="-0.9232 0 -0.20614" rpy="0 0 0"/>
+      <origin xyz="-0.6232 0 -0.20614" rpy="0 0 0"/>
       <parent link="left-front-knee-link"/>
       <child link="toeLF"/>
     </joint>
