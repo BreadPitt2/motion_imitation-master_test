@@ -32,11 +32,13 @@ SIM_TOE_OFFSET_LOCAL = [
     np.array([0.0, 0.0, 0.0]),
 ]
 
-# 8 actuated joints on Bittle: shoulder, knee x 4 legs.
-DEFAULT_JOINT_POSE = np.array([0, 0.67,
-                               0, 0.67,
-                               0, 0.67,
-                               0, 0.67])
+# 8 actuated joints in PyBullet order:
+# [LB_shoulder, LB_knee, LF_shoulder, LF_knee, RB_shoulder, RB_knee, RF_shoulder, RF_knee]
+# Use mirrored knee rest angles so IK prefers the same bend direction on left/right.
+DEFAULT_JOINT_POSE = np.array([0, -0.67,
+                               0, -0.67,
+                               0,  0.67,
+                               0,  0.67])
 JOINT_DAMPING = [0.5, 0.05,
                  0.5, 0.05,
                  0.5, 0.05,
