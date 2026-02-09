@@ -24,6 +24,7 @@ from motion_imitation.utilities import motion_util
 
 CONFIG_MODULE = os.environ.get("RETARGET_CONFIG_MODULE", "retarget_config_laikago")
 config = importlib.import_module(CONFIG_MODULE)
+PYBULLET_GUI_OPTIONS = os.environ.get("RETARGET_PYBULLET_GUI_OPTIONS", "--width=960 --height=540")
 
 POS_SIZE = 3
 ROT_SIZE = 4
@@ -359,7 +360,7 @@ def main(argv):
 
   
   p = pybullet
-  p.connect(p.GUI, options="--width=1920 --height=1080 --mp4=\"test.mp4\" --mp4fps=60")
+  p.connect(p.GUI, options=PYBULLET_GUI_OPTIONS)
   p.configureDebugVisualizer(p.COV_ENABLE_SINGLE_STEP_RENDERING,1)
 
   pybullet.setAdditionalSearchPath(pd.getDataPath())
