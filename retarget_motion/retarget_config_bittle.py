@@ -1,7 +1,8 @@
 import numpy as np
+from pathlib import Path
 from pybullet_utils  import transformations
 
-URDF_FILENAME = "bittle/urdf/bittle_toes.urdf"
+URDF_FILENAME = str(Path(__file__).resolve().parents[1] / "bittle" / "urdf" / "bittle_toes.urdf")
 
 REF_POS_SCALE = 1
 INIT_POS = np.array([0, 0, 0])
