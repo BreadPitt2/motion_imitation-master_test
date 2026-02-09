@@ -285,7 +285,7 @@
       <visual name="toeLF_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.05"/>
         </geometry>
         <material name="toe_material"/>
       </visual>
@@ -306,7 +306,7 @@
       <visual name="toeLB_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.05"/>
         </geometry>
         <material name="toe_material"/>
       </visual>
@@ -327,7 +327,7 @@
       <visual name="toeRF_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.05"/>
         </geometry>
         <material name="toe_material"/>
       </visual>
@@ -348,7 +348,7 @@
       <visual name="toeRB_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.05"/>
         </geometry>
         <material name="toe_material"/>
       </visual>

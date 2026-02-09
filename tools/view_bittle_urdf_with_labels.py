@@ -128,6 +128,18 @@ def main() -> None:
         help="Label only toe links (link name contains 'toe').",
     )
     parser.add_argument(
+        "--fade_non_toes",
+        action="store_true",
+        default=False,
+        help="Fade non-toe visuals (useful with --only_toes).",
+    )
+    parser.add_argument(
+        "--fade_alpha",
+        type=float,
+        default=0.15,
+        help="Alpha for faded links (0..1). Used with --fade_non_toes.",
+    )
+    parser.add_argument(
         "--width",
         type=int,
         default=960,
@@ -180,6 +192,23 @@ def main() -> None:
         info = p.getJointInfo(robot, i)
         idx_to_joint[i] = info[1].decode("utf-8")
         idx_to_link[i] = info[12].decode("utf-8")
+
+    if args.only_toes and (not args.fade_non_toes):
+        # Default to fading when focusing on toes.
+        args.fade_non_toes = True
+
+    if args.fade_non_toes:
+        toe_link_indices = [i for i in range(num) if "toe" in idx_to_link[i].lower()]
+        fade_alpha = max(0.0, min(1.0, float(args.fade_alpha)))
+        for link_index in range(-1, num):
+            if link_index in toe_link_indices:
+                p.changeVisualShape(
+                    robot, link_index, rgbaColor=[0.1, 0.9, 0.2, 1.0]
+                )
+            else:
+                p.changeVisualShape(
+                    robot, link_index, rgbaColor=[1.0, 1.0, 1.0, fade_alpha]
+                )
 
     wanted_joint_names = {
         "left-front-shoulder-joint",
