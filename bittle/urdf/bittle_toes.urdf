@@ -11,6 +11,9 @@
     <material name="yellow_material">
         <color rgba="0.8 0.7 0.0 1.0"/>
     </material>
+    <material name="toe_material">
+        <color rgba="0.1 0.9 0.2 1.0"/>
+    </material>
 
     <link name="base-frame-link">
       <inertial>
@@ -282,9 +285,9 @@
       <visual name="toeLF_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.01"/>
+          <sphere radius="0.02"/>
         </geometry>
-        <material name="black_material"/>
+        <material name="toe_material"/>
       </visual>
       <collision name="toeLF_c">
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -303,9 +306,9 @@
       <visual name="toeLB_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.01"/>
+          <sphere radius="0.02"/>
         </geometry>
-        <material name="black_material"/>
+        <material name="toe_material"/>
       </visual>
       <collision name="toeLB_c">
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -324,9 +327,9 @@
       <visual name="toeRF_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.01"/>
+          <sphere radius="0.02"/>
         </geometry>
-        <material name="black_material"/>
+        <material name="toe_material"/>
       </visual>
       <collision name="toeRF_c">
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -345,9 +348,9 @@
       <visual name="toeRB_v">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.01"/>
+          <sphere radius="0.02"/>
         </geometry>
-        <material name="black_material"/>
+        <material name="toe_material"/>
       </visual>
       <collision name="toeRB_c">
         <origin xyz="0 0 0" rpy="0 0 0"/>
