@@ -4,7 +4,7 @@ from pybullet_utils  import transformations
 
 URDF_FILENAME = str(Path(__file__).resolve().parents[1] / "bittle" / "urdf" / "bittle_toes.urdf")
 
-REF_POS_SCALE = 2.3
+REF_POS_SCALE = 2.1
 INIT_POS = np.array([0, 0, 0])
 INIT_ROT = transformations.quaternion_from_euler(
     ai=0.0, aj=0.0, ak=-np.pi / 2.0, axes="sxyz")
