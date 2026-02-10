@@ -87,9 +87,6 @@ LOWER_BOUND = -6.28318548203
 class Bittle(minitaur.Minitaur):
   """A simulation for the Bittle robot."""
 
-  NUM_MOTORS = NUM_MOTORS
-  NUM_LEGS = NUM_LEGS
-
   ACTION_CONFIG = [
       locomotion_gym_config.ScalarField(name="motor_angle_0",
                                         upper_bound=UPPER_BOUND,

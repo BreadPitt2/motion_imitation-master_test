@@ -94,9 +94,7 @@ def build_imitation_env(motion_files, num_parallel_envs, mode,
 
   gym_config = locomotion_gym_config.LocomotionGymConfig(simulation_parameters=sim_params)
 
-  # Use ACTION_CONFIG length as the source of truth for motor/action dimension.
-  # This avoids relying on optional robot-class constants.
-  num_motors = len(robot_class.ACTION_CONFIG)
+  num_motors = getattr(robot_class, "NUM_MOTORS", laikago.NUM_MOTORS)
 
   if trajectory_generator is None:
     if robot_class == laikago.Laikago:
