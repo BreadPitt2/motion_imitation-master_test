@@ -30,8 +30,6 @@ import time
 from motion_imitation.envs import env_builder as env_builder
 from motion_imitation.learning import imitation_policies as imitation_policies
 from motion_imitation.learning import ppo_imitation as ppo_imitation
-from motion_imitation.robots import bittle
-from motion_imitation.robots import laikago
 
 from stable_baselines.common.callbacks import CheckpointCallback
 
@@ -136,7 +134,6 @@ def test(model, env, num_procs, num_episodes=None):
 def main():
   arg_parser = argparse.ArgumentParser()
   arg_parser.add_argument("--seed", dest="seed", type=int, default=None)
-  arg_parser.add_argument("--robot", dest="robot", type=str, default="laikago")
   arg_parser.add_argument("--mode", dest="mode", type=str, default="train")
   arg_parser.add_argument("--motion_file", dest="motion_file", type=str, default="motion_imitation/data/motions/dog_pace.txt")
   arg_parser.add_argument("--visualize", dest="visualize", action="store_true", default=False)
@@ -150,22 +147,13 @@ def main():
   
   num_procs = MPI.COMM_WORLD.Get_size()
   os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
-
-  robot_name = args.robot.lower()
-  if robot_name == "laikago":
-    robot_class = laikago.Laikago
-  elif robot_name == "bittle":
-    robot_class = bittle.Bittle
-  else:
-    raise ValueError("Unsupported robot: " + args.robot)
   
   enable_env_rand = ENABLE_ENV_RANDOMIZER and (args.mode != "test")
   env = env_builder.build_imitation_env(motion_files=[args.motion_file],
                                         num_parallel_envs=num_procs,
                                         mode=args.mode,
                                         enable_randomizer=enable_env_rand,
-                                        enable_rendering=args.visualize,
-                                        robot_class=robot_class)
+                                        enable_rendering=args.visualize)
   
   model = build_model(env=env,
                       num_procs=num_procs,
