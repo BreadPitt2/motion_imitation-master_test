@@ -321,7 +321,47 @@ class Bittle(minitaur.Minitaur):
   def ApplyAction(self, motor_commands, motor_control_mode):
     if self._enable_clip_motor_commands:
       motor_commands = self._ClipMotorCommands(motor_commands)
-    super(Bittle, self).ApplyAction(motor_commands, motor_control_mode)
+    self.last_action_time = self._state_action_counter * self.time_step
+    control_mode = motor_control_mode
+    if control_mode is None:
+      control_mode = self._motor_control_mode
+
+    motor_commands = np.asarray(motor_commands)
+
+    if len(self._motor_id_list) != self.num_motors:
+      self._BuildJointNameToIdDict()
+      self._BuildMotorIdList()
+
+    self._joint_states = self._pybullet_client.getJointStates(
+        self.quadruped, self._motor_id_list)
+    q = np.array([state[0] for state in self._joint_states])
+    qdot = np.array([state[1] for state in self._joint_states])
+
+    # Convert to the same motor space used across Minitaur-family robots.
+    q = np.multiply(q - np.asarray(self._motor_offset), self._motor_direction)
+    qdot = np.multiply(qdot, self._motor_direction)
+    qdot_true = qdot
+
+    actual_torque, observed_torque = self._motor_model.convert_to_torque(
+        motor_commands, q, qdot, qdot_true, control_mode)
+
+    self._ApplyOverheatProtection(actual_torque)
+    self._observed_motor_torques = observed_torque
+    self._applied_motor_torque = np.multiply(actual_torque,
+                                             self._motor_direction)
+
+    motor_ids = []
+    motor_torques = []
+    for motor_id, motor_torque, motor_enabled in zip(
+        self._motor_id_list, self._applied_motor_torque,
+        self._motor_enabled_list):
+      motor_ids.append(motor_id)
+      if motor_enabled:
+        motor_torques.append(motor_torque)
+      else:
+        motor_torques.append(0)
+
+    self._SetMotorTorqueByIds(motor_ids, motor_torques)
 
   def _ClipMotorCommands(self, motor_commands):
     max_angle_change = MAX_MOTOR_ANGLE_CHANGE_PER_STEP
