@@ -27,6 +27,7 @@ from motion_imitation.envs.env_wrappers import observation_dictionary_to_array_w
 from motion_imitation.envs.env_wrappers import observation_dictionary_to_array_wrapper as obs_dict_to_array_wrapper
 from motion_imitation.envs.env_wrappers import trajectory_generator_wrapper_env
 from motion_imitation.envs.env_wrappers import simple_openloop
+from motion_imitation.envs.env_wrappers import bittle_openloop
 from motion_imitation.envs.env_wrappers import simple_forward_task
 from motion_imitation.envs.env_wrappers import imitation_task
 from motion_imitation.envs.env_wrappers import default_task
@@ -37,6 +38,7 @@ from motion_imitation.envs.sensors import robot_sensors
 from motion_imitation.envs.utilities import controllable_env_randomizer_from_config
 from motion_imitation.robots import laikago
 from motion_imitation.robots import a1
+from motion_imitation.robots import bittle
 from motion_imitation.robots import robot_config
 
 
@@ -79,7 +81,7 @@ def build_laikago_env( motor_control_mode, enable_rendering):
 def build_imitation_env(motion_files, num_parallel_envs, mode,
                         enable_randomizer, enable_rendering,
                         robot_class=laikago.Laikago,
-                        trajectory_generator=simple_openloop.LaikagoPoseOffsetGenerator(action_limit=laikago.UPPER_BOUND)):
+                        trajectory_generator=None):
   assert len(motion_files) > 0
 
   curriculum_episode_length_start = 20
@@ -92,10 +94,29 @@ def build_imitation_env(motion_files, num_parallel_envs, mode,
 
   gym_config = locomotion_gym_config.LocomotionGymConfig(simulation_parameters=sim_params)
 
+  num_motors = getattr(robot_class, "NUM_MOTORS", laikago.NUM_MOTORS)
+
+  if trajectory_generator is None:
+    if robot_class == laikago.Laikago:
+      trajectory_generator = simple_openloop.LaikagoPoseOffsetGenerator(
+          action_limit=laikago.UPPER_BOUND)
+    elif robot_class == bittle.Bittle:
+      trajectory_generator = bittle_openloop.BittlePoseOffsetGenerator(
+          init_pose=bittle.INIT_MOTOR_ANGLES, action_limit=bittle.UPPER_BOUND)
+    else:
+      trajectory_generator = simple_openloop.LaikagoPoseOffsetGenerator(
+          action_limit=laikago.UPPER_BOUND)
+
   sensors = [
-      sensor_wrappers.HistoricSensorWrapper(wrapped_sensor=robot_sensors.MotorAngleSensor(num_motors=laikago.NUM_MOTORS), num_history=3),
-      sensor_wrappers.HistoricSensorWrapper(wrapped_sensor=robot_sensors.IMUSensor(), num_history=3),
-      sensor_wrappers.HistoricSensorWrapper(wrapped_sensor=environment_sensors.LastActionSensor(num_actions=laikago.NUM_MOTORS), num_history=3)
+      sensor_wrappers.HistoricSensorWrapper(
+          wrapped_sensor=robot_sensors.MotorAngleSensor(num_motors=num_motors),
+          num_history=3),
+      sensor_wrappers.HistoricSensorWrapper(
+          wrapped_sensor=robot_sensors.IMUSensor(), num_history=3),
+      sensor_wrappers.HistoricSensorWrapper(
+          wrapped_sensor=environment_sensors.LastActionSensor(
+              num_actions=num_motors),
+          num_history=3)
   ]
 
   task = imitation_task.ImitationTask(ref_motion_filenames=motion_files,
