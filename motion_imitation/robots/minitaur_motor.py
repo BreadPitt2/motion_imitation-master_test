@@ -54,6 +54,10 @@ class MotorModel(object):
                kd=0,
                torque_limits=None,
                motor_control_mode=robot_config.MotorControlMode.POSITION):
+    self._nominal_kp = self._normalize_gain_vector(
+        kp, NUM_MOTORS, default_scalar=1.2)
+    self._nominal_kd = self._normalize_gain_vector(
+        kd, NUM_MOTORS, default_scalar=0.0)
     self._kp = kp
     self._kd = kd
     self._torque_limits = torque_limits
@@ -65,6 +69,19 @@ class MotorModel(object):
     self._current_table = [0, 10, 20, 30, 40, 50, 60]
     self._torque_table = [0, 1, 1.9, 2.45, 3.0, 3.25, 3.5]
     self._strength_ratios = [1.0] * NUM_MOTORS
+
+  def _normalize_gain_vector(self, gain, target_dim, default_scalar):
+    """Normalizes a scalar/vector gain to the target size."""
+    gain_vec = np.asarray(gain).reshape(-1)
+    if gain_vec.size == 0:
+      gain_vec = np.full(target_dim, default_scalar)
+    elif gain_vec.size == 1:
+      gain_vec = np.full(target_dim, gain_vec.item())
+    elif gain_vec.size != target_dim:
+      raise ValueError(
+          "Motor gain size {} does not match target size {}.".format(
+              gain_vec.size, target_dim))
+    return gain_vec
 
   def set_strength_ratios(self, ratios):
     """Set the strength of each motors relative to the default value.
@@ -96,8 +113,14 @@ class MotorModel(object):
       kp: proportional gain of the motors.
       kd: derivative gain of the motors.
     """
-    self._kp = kp
-    self._kd = kd
+    kp_vec = np.asarray(kp).reshape(-1)
+    kd_vec = np.asarray(kd).reshape(-1)
+
+    # Keep existing gains if an upstream component provides an empty vector.
+    if kp_vec.size != 0:
+      self._kp = kp
+    if kd_vec.size != 0:
+      self._kd = kd
 
   def set_voltage(self, voltage):
     self._voltage = voltage
@@ -165,8 +188,20 @@ class MotorModel(object):
     if motor_commands.size != target_dim:
       motor_commands = np.resize(motor_commands, target_dim)
 
-    kp = self._kp
-    kd = self._kd
+    kp = self._normalize_gain_vector(
+        self._kp, target_dim, default_scalar=self._nominal_kp[0])
+    kd = self._normalize_gain_vector(
+        self._kd, target_dim, default_scalar=self._nominal_kd[0])
+
+    true_motor_velocity = np.asarray(true_motor_velocity).reshape(-1)
+    if true_motor_velocity.size == 0:
+      true_motor_velocity = np.zeros(target_dim)
+    elif true_motor_velocity.size == 1:
+      true_motor_velocity = np.full(target_dim, true_motor_velocity.item())
+    elif true_motor_velocity.size != target_dim:
+      raise ValueError(
+          "True motor velocity size {} does not match target size {}.".format(
+              true_motor_velocity.size, target_dim))
 
     if motor_control_mode is robot_config.MotorControlMode.PWM:
       # The following implements a safety controller that softly enforces the
