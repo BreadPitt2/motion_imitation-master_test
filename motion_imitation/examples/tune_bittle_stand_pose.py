@@ -21,7 +21,7 @@ from motion_imitation.envs import env_builder
 from motion_imitation.robots import bittle
 from motion_imitation.robots import robot_config
 
-_STATUS_TEXT_IDS = {"summary": -1, "pose": -1}
+_STATUS_TEXT_IDS = {"summary": -1, "pose": -1, "joint_lines": []}
 
 
 def _add_joint_sliders(env, start_pose):
@@ -44,6 +44,7 @@ def _read_sliders(slider_ids):
 
 def _update_status(env, pose):
   rpy = np.asarray(env.robot.GetTrueBaseRollPitchYaw())
+  q = np.asarray(env.robot.GetTrueMotorAngles())
   pos = np.asarray(env.robot.GetBasePosition())
   contacts = env.robot.GetFootContacts()
   roll = float(np.degrees(rpy[0]))
@@ -65,6 +66,22 @@ def _update_status(env, pose):
       textColorRGB=[0.7, 1, 0.7],
       textSize=1.2,
       replaceItemUniqueId=_STATUS_TEXT_IDS["pose"])
+
+  joint_names = [cfg.name for cfg in bittle.ACTION_CONFIG]
+  if len(_STATUS_TEXT_IDS["joint_lines"]) != len(joint_names):
+    _STATUS_TEXT_IDS["joint_lines"] = [-1] * len(joint_names)
+
+  for i, name in enumerate(joint_names):
+    err = float(pose[i] - q[i])
+    color = [0.6, 1.0, 0.6] if abs(err) < 0.15 else [1.0, 0.5, 0.4]
+    line = "{} cmd={:+.2f} act={:+.2f} err={:+.2f}".format(
+        name, float(pose[i]), float(q[i]), err)
+    _STATUS_TEXT_IDS["joint_lines"][i] = p.addUserDebugText(
+        text=line,
+        textPosition=[0.0, 0.0, 0.32 - 0.03 * i],
+        textColorRGB=color,
+        textSize=1.0,
+        replaceItemUniqueId=_STATUS_TEXT_IDS["joint_lines"][i])
 
 
 def main():
