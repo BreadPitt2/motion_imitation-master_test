@@ -23,6 +23,14 @@ _STATUS_TEXT_IDS = {"summary": -1, "pose": -1, "joint_lines": []}
 
 
 def _add_joint_sliders(client, start_pose):
+  # Workaround: on some setups the first user slider can become non-responsive.
+  # Reserve index 0 with a dummy control so real joint sliders are stable.
+  client.addUserDebugParameter(
+      paramName="_dummy_slider",
+      rangeMin=0.0,
+      rangeMax=1.0,
+      startValue=0.0)
+
   slider_ids = []
   action_cfg = bittle.ACTION_CONFIG
   for i, cfg in enumerate(action_cfg):
