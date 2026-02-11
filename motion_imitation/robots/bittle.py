@@ -26,8 +26,8 @@ import re
 import numpy as np
 import pybullet as pyb  # pytype: disable=import-error
 
-from motion_imitation.robots import laikago_motor
 from motion_imitation.robots import minitaur
+from motion_imitation.robots import minitaur_motor
 from motion_imitation.robots import minitaur_constants
 from motion_imitation.robots import robot_config
 from motion_imitation.envs import locomotion_gym_config
@@ -173,7 +173,7 @@ class Bittle(minitaur.Minitaur):
         motor_offset=JOINT_OFFSETS,
         motor_overheat_protection=False,
         motor_control_mode=motor_control_mode,
-        motor_model_class=laikago_motor.LaikagoMotorModel,
+        motor_model_class=minitaur_motor.MotorModel,
         sensors=sensors,
         motor_kp=motor_kp,
         motor_kd=motor_kd,
