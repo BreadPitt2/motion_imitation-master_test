@@ -33,7 +33,8 @@ def run_check(seconds, roll_pitch_limit_deg, min_height, hold_after_seconds):
       enable_rendering=True,
       wrap_trajectory_generator=False)
 
-  hold_action = np.asarray(bittle.INIT_MOTOR_ANGLES, dtype=np.float32)
+  hold_pose = getattr(bittle, "STAND_MOTOR_ANGLES", bittle.INIT_MOTOR_ANGLES)
+  hold_action = np.asarray(hold_pose, dtype=np.float32)
   step_dt = env._env_time_step  # pylint: disable=protected-access
 
   fail_reason = None

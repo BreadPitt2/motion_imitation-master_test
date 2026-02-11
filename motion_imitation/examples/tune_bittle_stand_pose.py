@@ -75,7 +75,8 @@ def main():
       enable_rendering=True,
       wrap_trajectory_generator=False)
 
-  pose = np.asarray(bittle.INIT_MOTOR_ANGLES, dtype=np.float32)
+  start_pose = getattr(bittle, "STAND_MOTOR_ANGLES", bittle.INIT_MOTOR_ANGLES)
+  pose = np.asarray(start_pose, dtype=np.float32)
   slider_ids = _add_joint_sliders(env, pose)
   env.reset(initial_motor_angles=pose, reset_duration=0.0)
 

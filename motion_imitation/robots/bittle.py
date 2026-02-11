@@ -48,7 +48,8 @@ MOTOR_NAMES = [
 ]
 
 INIT_RACK_POSITION = [0, 0, 1.0]
-INIT_POSITION = [0, 0, 0.88]
+# Spawn closer to ground to avoid a large impact impulse at reset.
+INIT_POSITION = [0, 0, 0.42]
 JOINT_DIRECTIONS = np.ones(NUM_MOTORS)
 JOINT_OFFSETS = np.zeros(NUM_MOTORS)
 
@@ -57,6 +58,13 @@ INIT_MOTOR_ANGLES = np.array([0.0, -0.67,
                               0.0, -0.67,
                               0.0, 0.67,
                               0.0, 0.67])
+
+# Dedicated standing pose used during reset/settle. Keep this separate from
+# INIT_MOTOR_ANGLES so imitation action offsets remain unchanged.
+STAND_MOTOR_ANGLES = np.array([0.0, -1.05,
+                               0.0, -1.05,
+                               0.0, 1.05,
+                               0.0, 1.05])
 
 MAX_MOTOR_ANGLE_CHANGE_PER_STEP = 0.3
 
@@ -190,7 +198,7 @@ class Bittle(minitaur.Minitaur):
 
     for _ in range(300):
       self._StepInternal(
-          INIT_MOTOR_ANGLES,
+          STAND_MOTOR_ANGLES,
           motor_control_mode=robot_config.MotorControlMode.POSITION)
 
     if default_motor_angles is not None:
@@ -233,7 +241,7 @@ class Bittle(minitaur.Minitaur):
       self._pybullet_client.resetJointState(
           self.quadruped,
           self._joint_name_to_id[motor_name],
-          INIT_MOTOR_ANGLES[i],
+          STAND_MOTOR_ANGLES[i],
           targetVelocity=0)
 
   def GetURDFFile(self):
@@ -293,7 +301,7 @@ class Bittle(minitaur.Minitaur):
     return self._GetDefaultInitOrientation()
 
   def GetDefaultInitJointPose(self):
-    return (INIT_MOTOR_ANGLES + JOINT_OFFSETS) * JOINT_DIRECTIONS
+    return (STAND_MOTOR_ANGLES + JOINT_OFFSETS) * JOINT_DIRECTIONS
 
   def ApplyAction(self, motor_commands, motor_control_mode=None):
     if self._enable_clip_motor_commands:
