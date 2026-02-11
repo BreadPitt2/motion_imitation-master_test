@@ -48,8 +48,7 @@ MOTOR_NAMES = [
 ]
 
 INIT_RACK_POSITION = [0, 0, 1.0]
-# Spawn closer to ground to avoid a large impact impulse at reset.
-INIT_POSITION = [0, 0, 0.42]
+INIT_POSITION = [0, 0, 0.88]
 JOINT_DIRECTIONS = np.ones(NUM_MOTORS)
 JOINT_OFFSETS = np.zeros(NUM_MOTORS)
 

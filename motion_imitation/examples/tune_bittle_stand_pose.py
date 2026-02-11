@@ -21,6 +21,8 @@ from motion_imitation.envs import env_builder
 from motion_imitation.robots import bittle
 from motion_imitation.robots import robot_config
 
+_STATUS_TEXT_IDS = {"summary": -1, "pose": -1}
+
 
 def _add_joint_sliders(env, start_pose):
   slider_ids = []
@@ -50,29 +52,32 @@ def _update_status(env, pose):
   contact_count = int(np.sum(np.asarray(contacts, dtype=np.int32)))
   status = "z={:.3f}  roll={:+.1f}  pitch={:+.1f}  contacts={}/4".format(
       z, roll, pitch, contact_count)
-  p.removeAllUserDebugItems()
-  p.addUserDebugText(
+  _STATUS_TEXT_IDS["summary"] = p.addUserDebugText(
       text=status,
       textPosition=[0.0, 0.0, 0.45],
       textColorRGB=[1, 1, 0],
-      textSize=1.6)
-  p.addUserDebugText(
+      textSize=1.6,
+      replaceItemUniqueId=_STATUS_TEXT_IDS["summary"])
+  _STATUS_TEXT_IDS["pose"] = p.addUserDebugText(
       text="Current pose: [{}]".format(
           ", ".join(["{:+.3f}".format(v) for v in pose.tolist()])),
       textPosition=[0.0, 0.0, 0.38],
       textColorRGB=[0.7, 1, 0.7],
-      textSize=1.2)
+      textSize=1.2,
+      replaceItemUniqueId=_STATUS_TEXT_IDS["pose"])
 
 
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--seconds", type=float, default=0.0)
+  parser.add_argument("--on_rack", action="store_true", default=False)
   args = parser.parse_args()
 
   env = env_builder.build_regular_env(
       robot_class=bittle.Bittle,
       motor_control_mode=robot_config.MotorControlMode.POSITION,
       enable_rendering=True,
+      on_rack=args.on_rack,
       wrap_trajectory_generator=False)
 
   start_pose = getattr(bittle, "STAND_MOTOR_ANGLES", bittle.INIT_MOTOR_ANGLES)
