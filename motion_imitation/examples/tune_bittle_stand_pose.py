@@ -10,8 +10,6 @@ import os
 import time
 
 import numpy as np
-import pybullet as p  # pytype: disable=import-error
-
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
@@ -24,12 +22,12 @@ from motion_imitation.robots import robot_config
 _STATUS_TEXT_IDS = {"summary": -1, "pose": -1, "joint_lines": []}
 
 
-def _add_joint_sliders(env, start_pose):
+def _add_joint_sliders(client, start_pose):
   slider_ids = []
   action_cfg = bittle.ACTION_CONFIG
   for i, cfg in enumerate(action_cfg):
     slider_ids.append(
-        p.addUserDebugParameter(
+        client.addUserDebugParameter(
             paramName=cfg.name,
             rangeMin=float(cfg.lower_bound),
             rangeMax=float(cfg.upper_bound),
@@ -37,12 +35,12 @@ def _add_joint_sliders(env, start_pose):
   return slider_ids
 
 
-def _read_sliders(slider_ids):
-  return np.array([p.readUserDebugParameter(i) for i in slider_ids],
+def _read_sliders(client, slider_ids):
+  return np.array([client.readUserDebugParameter(i) for i in slider_ids],
                   dtype=np.float32)
 
 
-def _update_status(env, pose):
+def _update_status(client, env, pose):
   rpy = np.asarray(env.robot.GetTrueBaseRollPitchYaw())
   q = np.asarray(env.robot.GetTrueMotorAngles())
   pos = np.asarray(env.robot.GetBasePosition())
@@ -53,13 +51,13 @@ def _update_status(env, pose):
   contact_count = int(np.sum(np.asarray(contacts, dtype=np.int32)))
   status = "z={:.3f}  roll={:+.1f}  pitch={:+.1f}  contacts={}/4".format(
       z, roll, pitch, contact_count)
-  _STATUS_TEXT_IDS["summary"] = p.addUserDebugText(
+  _STATUS_TEXT_IDS["summary"] = client.addUserDebugText(
       text=status,
       textPosition=[0.0, 0.0, 0.45],
       textColorRGB=[1, 1, 0],
       textSize=1.6,
       replaceItemUniqueId=_STATUS_TEXT_IDS["summary"])
-  _STATUS_TEXT_IDS["pose"] = p.addUserDebugText(
+  _STATUS_TEXT_IDS["pose"] = client.addUserDebugText(
       text="Current pose: [{}]".format(
           ", ".join(["{:+.3f}".format(v) for v in pose.tolist()])),
       textPosition=[0.0, 0.0, 0.38],
@@ -76,7 +74,7 @@ def _update_status(env, pose):
     color = [0.6, 1.0, 0.6] if abs(err) < 0.15 else [1.0, 0.5, 0.4]
     line = "{} cmd={:+.2f} act={:+.2f} err={:+.2f}".format(
         name, float(pose[i]), float(q[i]), err)
-    _STATUS_TEXT_IDS["joint_lines"][i] = p.addUserDebugText(
+    _STATUS_TEXT_IDS["joint_lines"][i] = client.addUserDebugText(
         text=line,
         textPosition=[0.0, 0.0, 0.32 - 0.03 * i],
         textColorRGB=color,
@@ -96,10 +94,11 @@ def main():
       enable_rendering=True,
       on_rack=args.on_rack,
       wrap_trajectory_generator=False)
+  client = env.pybullet_client
 
   start_pose = getattr(bittle, "STAND_MOTOR_ANGLES", bittle.INIT_MOTOR_ANGLES)
   pose = np.asarray(start_pose, dtype=np.float32)
-  slider_ids = _add_joint_sliders(env, pose)
+  slider_ids = _add_joint_sliders(client, pose)
   env.reset(initial_motor_angles=pose, reset_duration=0.0)
 
   start_t = time.time()
@@ -107,10 +106,10 @@ def main():
 
   try:
     while True:
-      pose = _read_sliders(slider_ids)
+      pose = _read_sliders(client, slider_ids)
       env.step(pose)
       if step_count % 8 == 0:
-        _update_status(env, pose)
+        _update_status(client, env, pose)
       step_count += 1
 
       if args.seconds > 0 and (time.time() - start_t) >= args.seconds:
