@@ -30,6 +30,9 @@ import time
 from motion_imitation.envs import env_builder as env_builder
 from motion_imitation.learning import imitation_policies as imitation_policies
 from motion_imitation.learning import ppo_imitation as ppo_imitation
+from motion_imitation.robots import laikago
+from motion_imitation.robots import a1
+from motion_imitation.robots import bittle
 
 from stable_baselines.common.callbacks import CheckpointCallback
 
@@ -37,6 +40,18 @@ TIMESTEPS_PER_ACTORBATCH = 4096
 OPTIM_BATCHSIZE = 256
 
 ENABLE_ENV_RANDOMIZER = True
+
+_ROBOT_CLASS_MAP = {
+    "laikago": laikago.Laikago,
+    "a1": a1.A1,
+    "bittle": bittle.Bittle,
+}
+
+_DEFAULT_MOTION_MAP = {
+    "laikago": "motion_imitation/data/motions/dog_pace.txt",
+    "a1": "motion_imitation/data/motions/dog_pace.txt",
+    "bittle": "motion_imitation/data/bittle_motions/trot2.txt",
+}
 
 def set_rand_seed(seed=None):
   if seed is None:
@@ -135,7 +150,9 @@ def main():
   arg_parser = argparse.ArgumentParser()
   arg_parser.add_argument("--seed", dest="seed", type=int, default=None)
   arg_parser.add_argument("--mode", dest="mode", type=str, default="train")
-  arg_parser.add_argument("--motion_file", dest="motion_file", type=str, default="motion_imitation/data/motions/dog_pace.txt")
+  arg_parser.add_argument("--robot", dest="robot", type=str, default="laikago",
+                          choices=sorted(_ROBOT_CLASS_MAP.keys()))
+  arg_parser.add_argument("--motion_file", dest="motion_file", type=str, default="")
   arg_parser.add_argument("--visualize", dest="visualize", action="store_true", default=False)
   arg_parser.add_argument("--output_dir", dest="output_dir", type=str, default="output")
   arg_parser.add_argument("--num_test_episodes", dest="num_test_episodes", type=int, default=None)
@@ -144,16 +161,20 @@ def main():
   arg_parser.add_argument("--int_save_freq", dest="int_save_freq", type=int, default=0) # save intermediate model every n policy steps
 
   args = arg_parser.parse_args()
+  robot_key = args.robot.lower()
+  robot_class = _ROBOT_CLASS_MAP[robot_key]
+  motion_file = args.motion_file if args.motion_file else _DEFAULT_MOTION_MAP[robot_key]
   
   num_procs = MPI.COMM_WORLD.Get_size()
   os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
   
   enable_env_rand = ENABLE_ENV_RANDOMIZER and (args.mode != "test")
-  env = env_builder.build_imitation_env(motion_files=[args.motion_file],
+  env = env_builder.build_imitation_env(motion_files=[motion_file],
                                         num_parallel_envs=num_procs,
                                         mode=args.mode,
                                         enable_randomizer=enable_env_rand,
-                                        enable_rendering=args.visualize)
+                                        enable_rendering=args.visualize,
+                                        robot_class=robot_class)
   
   model = build_model(env=env,
                       num_procs=num_procs,

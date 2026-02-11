@@ -188,3 +188,30 @@ class SimpleRobotOffsetGenerator(object):
         """Get the trajectory generator's observation."""
 
         return input_observation
+
+
+class MotorPoseOffsetGenerator(object):
+  """A trajectory generator that adds an action offset to a fixed motor pose."""
+
+  def __init__(self, init_pose, action_limit=0.5):
+    self._pose = np.array(init_pose)
+    if self._pose.ndim != 1:
+      raise ValueError("init_pose must be a 1D array of motor angles.")
+
+    action_high = np.asarray(action_limit, dtype=np.float32)
+    if action_high.ndim == 0:
+      action_high = np.full(self._pose.shape[0], action_high, dtype=np.float32)
+    elif action_high.shape[0] != self._pose.shape[0]:
+      raise ValueError("action_limit must be scalar or match init_pose size.")
+
+    self.action_space = spaces.Box(-action_high, action_high, dtype=np.float32)
+
+  def reset(self):
+    pass
+
+  def get_action(self, current_time=None, input_action=None):
+    del current_time
+    return self._pose + np.array(input_action)
+
+  def get_observation(self, input_observation):
+    return input_observation
