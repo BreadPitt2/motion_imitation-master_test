@@ -143,6 +143,28 @@ class MotorModel(object):
       raise ValueError("{} is not a supported motor control mode".format(
           motor_control_mode))
 
+    motor_commands = np.asarray(motor_commands).reshape(-1)
+    motor_angle = np.asarray(motor_angle).reshape(-1)
+    motor_velocity = np.asarray(motor_velocity).reshape(-1)
+
+    # Defensively align shapes at startup: some env/model combinations may
+    # briefly produce empty vectors before the first valid observation/action.
+    target_dim = max(motor_commands.size, motor_angle.size, motor_velocity.size,
+                     NUM_MOTORS)
+    if motor_angle.size == 0:
+      motor_angle = np.zeros(target_dim)
+    if motor_velocity.size == 0:
+      motor_velocity = np.zeros(target_dim)
+    if motor_commands.size == 0:
+      motor_commands = motor_angle.copy()
+
+    if motor_angle.size != target_dim:
+      motor_angle = np.resize(motor_angle, target_dim)
+    if motor_velocity.size != target_dim:
+      motor_velocity = np.resize(motor_velocity, target_dim)
+    if motor_commands.size != target_dim:
+      motor_commands = np.resize(motor_commands, target_dim)
+
     kp = self._kp
     kd = self._kd
 
