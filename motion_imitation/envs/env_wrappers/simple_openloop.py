@@ -211,7 +211,16 @@ class MotorPoseOffsetGenerator(object):
 
   def get_action(self, current_time=None, input_action=None):
     del current_time
-    return self._pose + np.array(input_action)
+    action = np.asarray(input_action).reshape(-1)
+    if action.size == 0:
+      # Some training setups may produce an empty action vector at startup.
+      # Fall back to the nominal pose instead of crashing.
+      return self._pose.copy()
+    if action.size != self._pose.shape[0]:
+      raise ValueError(
+          "Action size {} does not match pose size {}.".format(
+              action.size, self._pose.shape[0]))
+    return self._pose + action
 
   def get_observation(self, input_observation):
     return input_observation

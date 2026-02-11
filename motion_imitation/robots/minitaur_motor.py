@@ -195,7 +195,18 @@ class MotorModel(object):
     actual_torque = np.interp(current_magnitude, self._current_table,
                               self._torque_table)
     actual_torque = np.multiply(current_sign, actual_torque)
-    actual_torque = np.multiply(self._strength_ratios, actual_torque)
+
+    strength = np.asarray(self._strength_ratios).reshape(-1)
+    if strength.size == 0:
+      strength = np.ones_like(actual_torque)
+    elif strength.size == 1:
+      strength = np.full_like(actual_torque, strength.item())
+    elif strength.size != actual_torque.size:
+      raise ValueError(
+          "Motor strength size {} does not match torque size {}.".format(
+              strength.size, actual_torque.size))
+
+    actual_torque = np.multiply(strength, actual_torque)
     if self._torque_limits is not None:
       actual_torque = np.clip(actual_torque, -1.0 * self._torque_limits,
                               self._torque_limits)
