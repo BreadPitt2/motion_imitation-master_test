@@ -168,7 +168,9 @@ def main():
   num_procs = MPI.COMM_WORLD.Get_size()
   os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
   
-  enable_env_rand = ENABLE_ENV_RANDOMIZER and (args.mode != "test")
+  # Start with deterministic dynamics for Bittle; randomization can be enabled later.
+  enable_env_rand = ENABLE_ENV_RANDOMIZER and (args.mode != "test") and (
+      robot_key != "bittle")
   env = env_builder.build_imitation_env(motion_files=[motion_file],
                                         num_parallel_envs=num_procs,
                                         mode=args.mode,

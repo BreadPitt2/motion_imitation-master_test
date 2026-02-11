@@ -73,7 +73,18 @@ class MotorModel(object):
       ratios: The relative strength of motor output. A numpy array ranging from
         0.0 to 1.0.
     """
-    self._strength_ratios = np.array(ratios)
+    ratios = np.asarray(ratios).reshape(-1)
+    if ratios.size == 0:
+      # Fall back to nominal motor strength if randomization supplies an empty vector.
+      ratios = np.ones(NUM_MOTORS)
+    elif ratios.size == 1:
+      ratios = np.full(NUM_MOTORS, ratios.item())
+    elif ratios.size != NUM_MOTORS:
+      raise ValueError(
+          "Motor strength ratio size {} does not match NUM_MOTORS {}.".format(
+              ratios.size, NUM_MOTORS))
+
+    self._strength_ratios = ratios
 
   def set_motor_gains(self, kp, kd):
     """Set the gains of all motors.
