@@ -60,9 +60,9 @@ INIT_MOTOR_ANGLES = np.array([0.0, -0.67,
 
 # Dedicated standing pose used during reset/settle. Keep this separate from
 # INIT_MOTOR_ANGLES so imitation action offsets remain unchanged.
-STAND_MOTOR_ANGLES = np.array([0.0, -1.05,
+STAND_MOTOR_ANGLES = np.array([1.02883, -1.05,
                                0.0, -1.05,
-                               0.0, 1.05,
+                               -1.02883, 1.05,
                                0.0, 1.05])
 
 MAX_MOTOR_ANGLE_CHANGE_PER_STEP = 0.3
