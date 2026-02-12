@@ -106,7 +106,7 @@ def train(model, env, total_timesteps, output_dir="", int_save_freq=0):
   # Save a checkpoint every n steps
   if (output_dir != ""):
     if (int_save_freq > 0):
-      int_dir = os.path.join(output_dir, "intermedate")
+      int_dir = os.path.join(output_dir, "intermediate")
       callbacks.append(CheckpointCallback(save_freq=int_save_freq, save_path=int_dir,
                                           name_prefix='model'))
 
