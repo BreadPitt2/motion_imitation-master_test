@@ -284,6 +284,12 @@ class PPOImitation(pposgd_simple.PPO1):
                     observations, actions = seg["observations"], seg["actions"]
                     atarg, tdlamret = seg["adv"], seg["tdlamret"]
 
+                    # Guard against occasional NaN/Inf values from rollouts.
+                    observations = np.nan_to_num(observations)
+                    actions = np.nan_to_num(actions)
+                    atarg = np.nan_to_num(atarg)
+                    tdlamret = np.nan_to_num(tdlamret)
+
                     # true_rew is the reward without discount
                     if writer is not None:
                         total_episode_reward_logger(self.episode_reward,
@@ -294,8 +300,14 @@ class PPOImitation(pposgd_simple.PPO1):
                     # predicted value function before udpate
                     vpredbefore = seg["vpred"]
 
-                    # standardized advantage function estimate
-                    atarg = (atarg - atarg.mean()) / atarg.std()
+                    # Standardized advantage with epsilon to avoid division-by-zero.
+                    atarg_mean = atarg.mean()
+                    atarg_std = atarg.std()
+                    if not np.isfinite(atarg_std) or atarg_std < 1e-8:
+                        atarg = atarg - atarg_mean
+                    else:
+                        atarg = (atarg - atarg_mean) / atarg_std
+                    atarg = np.nan_to_num(atarg)
                     dataset = Dataset(dict(ob=observations, ac=actions, atarg=atarg, vtarg=tdlamret),
                                       shuffle=not self.policy.recurrent)
                     optim_batchsize = self.optim_batchsize or observations.shape[0]
@@ -337,10 +349,17 @@ class PPOImitation(pposgd_simple.PPO1):
                                                                        batch["atarg"], batch["vtarg"], cur_lrmult,
                                                                        sess=self.sess)
 
+                            local_bad = (not np.isfinite(grad).all()) or (not np.isfinite(np.asarray(newlosses)).all())
+                            bad_count = MPI.COMM_WORLD.allreduce(int(local_bad), op=MPI.SUM)
+                            if bad_count > 0:
+                                if is_root:
+                                    logger.log("Skipping minibatch due to non-finite grad/loss on at least one rank.")
+                                continue
+
                             self.adam.update(grad, self.optim_stepsize * cur_lrmult)
-                            losses.append(newlosses)
+                            losses.append(np.nan_to_num(newlosses))
                         
-                        if is_root:
+                        if is_root and len(losses) > 0:
                             logger.log(fmt_row(13, np.mean(losses, axis=0)))
 
                     if is_root:
@@ -350,8 +369,14 @@ class PPOImitation(pposgd_simple.PPO1):
                     for batch in dataset.iterate_once(optim_batchsize):
                         newlosses = self.compute_losses(batch["ob"], batch["ob"], batch["ac"], batch["atarg"],
                                                         batch["vtarg"], cur_lrmult, sess=self.sess)
+                        newlosses = np.nan_to_num(newlosses)
                         losses.append(newlosses)
-                    mean_losses, _, _ = mpi_moments(losses, axis=0)
+                    if len(losses) == 0:
+                        if is_root:
+                            logger.log("No valid minibatches this iteration; using zero losses.")
+                        mean_losses = np.zeros(len(self.loss_names), dtype=np.float32)
+                    else:
+                        mean_losses, _, _ = mpi_moments(losses, axis=0)
 
                     if is_root:
                         logger.log(fmt_row(13, mean_losses))
