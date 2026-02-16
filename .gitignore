@@ -11,6 +11,7 @@ dist/
 build/
 
 # training artifacts
-output_bittle_trot2_level/
+output_bittle_trot2_level/**
+!output_bittle_trot2_level/model.zip
 **/events.out.tfevents.*
 
