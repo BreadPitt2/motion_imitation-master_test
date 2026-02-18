@@ -1,0 +1,21 @@
+.vscode
+*.docx
+*.rar
+*.DS_Store
+*.cfg
+*.svd
+debug_custom.json
+build/
+
+# IP configuration files
+*ip.json
+*ip.txt
+last_ip*
+lastip*
+ip_config*
+config_ip*
+device_ip*
+connection_config*
+petoi_config*
+*.ip
+PetoiWebBlock/communication.pptx
